@@ -1,4 +1,4 @@
-import express, { Application, Request, Response } from "express";
+import { Application, Request, Response } from "express";
 import pool from "./database";
 
 function routes(app: Application) {
@@ -42,16 +42,16 @@ function routes(app: Application) {
     }
   });
 
-  // Get and add a service
+  // Get services and add a service
   app
     .route("/providers/:id/services")
     .get(async (req: Request, res: Response) => {
-      const provider_id = req.params.id;
+      const providerId = req.params.id;
 
       try {
         const query = await pool.query(
           "SELECT * FROM service WHERE provider_id = ($1)",
-          [provider_id]
+          [providerId]
         );
 
         res.send(query.rows);
@@ -62,12 +62,15 @@ function routes(app: Application) {
       }
     })
     .post(async (req: Request, res: Response) => {
-      const { name, providerId, price } = req.body;
+      const providerId = req.params.id;
+      const { name, price, duration } = req.body;
 
       try {
         const query = await pool.query(
-          "INSERT INTO service (service_name, provider_id, price) VALUES ($1, $2, $3) RETURNING *",
-          [name, providerId, price]
+          `INSERT INTO service (provider_id, service_name, price, duration)
+          VALUES ($1, $2, $3, $4)
+          RETURNING *`,
+          [providerId, name, price, duration]
         );
 
         res.send(query.rows[0]);
@@ -97,6 +100,63 @@ function routes(app: Application) {
       });
     }
   });
+
+  // Get a client
+  app.get("/clients/:id", async (req: Request, res: Response) => {
+    const clientId = req.params.id;
+
+    try {
+      const query = await pool.query(
+        "SELECT * FROM client WHERE client_id = ($1)",
+        [clientId]
+      );
+
+      res.send(query.rows[0]);
+    } catch (error: any) {
+      res.status(500).send({
+        error: error.message,
+      });
+    }
+  });
+
+  // Get appointments and add an appointment
+  app
+    .route("/clients/:id/appointments")
+    .get(async (req: Request, res: Response) => {
+      const clientId = req.params.id;
+
+      try {
+        const query = await pool.query(
+          "SELECT * FROM appointment WHERE client_id = ($1)",
+          [clientId]
+        );
+
+        res.send(query.rows);
+      } catch (error: any) {
+        res.status(500).send({
+          error: error.message,
+        });
+      }
+    })
+    .post(async (req: Request, res: Response) => {
+      const clientId = req.params.id;
+      const { serviceId, date, time } = req.body;
+
+      try {
+        const query = await pool.query(
+          `INSERT INTO appointment (client_id, service_id, appointment_date, appointment_time)
+          VALUES ($1, $2, $3, $4)
+          RETURNING *`,
+          [clientId, serviceId, date, time]
+        );
+
+        res.send(query.rows[0]);
+      } catch (error: any) {
+        res.status(500).send({
+          error: error.message,
+        });
+      }
+    });
 }
 
 export default routes;
