@@ -12,4 +12,6 @@ router
   .get(providerController.getServices)
   .post(providerController.addService);
 
+router.get("/:id/appointments", providerController.getAppointments);
+
 export default router;

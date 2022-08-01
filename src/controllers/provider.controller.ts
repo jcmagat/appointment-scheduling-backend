@@ -72,4 +72,31 @@ const addService = async (req: Request, res: Response) => {
   }
 };
 
-export default { getProvider, addProvider, getServices, addService };
+const getAppointments = async (req: Request, res: Response) => {
+  const providerId = req.params.id;
+
+  try {
+    const query = await pool.query(
+      `SELECT a.*
+      FROM appointment a
+      INNER JOIN service s
+        ON a.service_id = s.service_id
+      WHERE s.provider_id = ($1)`,
+      [providerId]
+    );
+
+    res.send(query.rows);
+  } catch (error: any) {
+    res.status(500).send({
+      error: error.message,
+    });
+  }
+};
+
+export default {
+  getProvider,
+  addProvider,
+  getServices,
+  addService,
+  getAppointments,
+};
